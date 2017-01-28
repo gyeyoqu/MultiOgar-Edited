@@ -38,11 +38,12 @@ FFA.prototype.updateLB = function(gameServer) {
 
     gameServer.leaderboard = lb;
     this.rankOne = lb[0];
+    gameServer.leaderboardChanged = true;
 };
 
 function scoreSort(a, b) {
     try {
-        return a.playerTracker._score - b.playerTracker._score;
+        return b._score - a._score;
     } catch (e) {
         return 0;
     }
