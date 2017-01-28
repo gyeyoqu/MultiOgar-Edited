@@ -104,8 +104,7 @@ function GameServer() {
         foodMinSize: 10,            // Minimum food size (vanilla 10)
         foodMaxSize: 20,            // Maximum food size (vanilla 20)
         foodAmount: 1000,           // Amount of food cells on the map
-        foodPerMother: 2000,        // Maximum spawned food cells per mother cell
-        foodSpawnAmount: 30,        // The number of food to spawn per interval
+        foodPerMother: 96,          // Maximum spawned food cells per mother cell
         foodMassGrow: 1,            // Enable food mass grow ?
 
         /** VIRUSES **/
