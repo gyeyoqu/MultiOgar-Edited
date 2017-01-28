@@ -750,7 +750,7 @@ GameServer.prototype.boostCell = function(cell) {
         cell.boostDirection.y = -cell.boostDirection.y;
     cell.checkBorder(this.border);
 
-    if (cell.boostDistance < 3) {
+    if (cell.boostDistance < 3 && cell.cellType !== 3) {
         cell.boostDistance = 0;
         cell.isMoving = false;
         var i = this.movingNodes.indexOf(cell);
