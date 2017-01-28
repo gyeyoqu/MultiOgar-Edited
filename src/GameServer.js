@@ -34,6 +34,7 @@ function GameServer() {
     this.movingNodes = [];      // For move engine
     this.leaderboard = [];      // For leaderboard
     this.leaderboardType = -1;  // No type
+    this.leaderboardChanged = false;
 
     // Bits per second
     this.uploadAvg = 0;
@@ -440,6 +441,7 @@ GameServer.prototype.updateClients = function() {
         else
             i++;
     }
+
     // check dead clients
     var len = this.clients.length;
     for (var i = 0; i < len; ) {
@@ -454,6 +456,7 @@ GameServer.prototype.updateClients = function() {
         else
             i++;
     }
+
     // update
     for (var i = 0; i < len; i++) {
     	if (!this.clients[i]) continue;
@@ -640,7 +643,7 @@ GameServer.prototype.mainLoop = function() {
                     self.resolveRigidCollision(m);
                 else {
                     self.resolveCollision(m);
-                    if (check.cell.cellType === 0 && check.cell.isRemoved) {
+                    if (check.cell.isRemoved && check.cell.cellType === 0) {
                         i--;
                         l--;
                     }
@@ -663,9 +666,12 @@ GameServer.prototype.mainLoop = function() {
     }
     this.updateClients();
 
-    // update leaderboard & internet usage
-    if (((this.tickCounter + 7) % 25) === 0) {
-        this.updateLeaderboard(); // once per second
+    // update leaderboard
+    if (((this.tickCounter + 3) % 8) === 0)
+        this.updateLeaderboard();
+
+    // update internet usage
+    if ((this.tickCounter % 25) === 0) {
         this.uploadAvg = this.uploadAvg * .5 + this.uploadUsage * .5;
         this.downloadAvg = this.downloadAvg * .5 + this.downloadUsage * .5;
         this.uploadUsage = this.downloadUsage = 0;
