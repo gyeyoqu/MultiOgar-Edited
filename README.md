@@ -125,7 +125,7 @@ Just replace `127.0.0.1:443` in the url to the server IP and port to play.
 
 URL | Protocol | Description
 --- | --- | ---
-http://agar.io/?ip=127.0.0.1:443 | 8 | Vanilla
+http://agar.io/?ip=127.0.0.1:443 | 11 | Vanilla
 http://ogar.mivabe.nl/?ip=127.0.0.1:443 | early 5 | MivaBe, pretty smooth, custom graphics (anime)
 http://old.ogarul.io/?ip=127.0.0.1:443 | 4 | OgarUL, old vanilla style
 http://c0nsume.me/private4.php?ip=127.0.0.1:443 | 5 | Vanilla style
