@@ -6,11 +6,12 @@ function UpdateLeaderboard(playerTracker, leaderboard, leaderboardType) {
     this.playerTracker = playerTracker;
     this.leaderboard = leaderboard;
     this.leaderboardType = leaderboardType;
+    this.leaderboardCount = Math.min(leaderboard.length, playerTracker.gameServer.config.serverMaxLB);
 }
 
 module.exports = UpdateLeaderboard;
 
-UpdateLeaderboard.prototype.build = function (protocol) {
+UpdateLeaderboard.prototype.build = function(protocol) {
     switch (this.leaderboardType) {
         case 48:
             // UserText
@@ -31,18 +32,18 @@ UpdateLeaderboard.prototype.build = function (protocol) {
 }
 
 // UserText
-UpdateLeaderboard.prototype.buildUserText = function (protocol) {
+UpdateLeaderboard.prototype.buildUserText = function(protocol) {
     var writer = new BinaryWriter();
     writer.writeUInt8(0x31);                                // Packet ID
     writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements
     for (var i = 0; i < this.leaderboard.length; i++) {
         var item = this.leaderboard[i];
         if (item == null) return null;  // bad leaderboardm just don't send it
-        
+
         var name = item;
         name = name ? name : "";
         var id = 0;
-        
+
         if (protocol < 11)
         writer.writeUInt32(id >> 0);                        // isMe flag/cell ID
         if (protocol < 6)
@@ -54,24 +55,24 @@ UpdateLeaderboard.prototype.buildUserText = function (protocol) {
 };
 
 // FFA protocol 5
-UpdateLeaderboard.prototype.buildFfa5 = function () {
+UpdateLeaderboard.prototype.buildFfa5 = function(amount) {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null) {
+    if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
-    }
+
     var writer = new BinaryWriter();
-    writer.writeUInt8(0x31);                                // Packet ID
-    writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements
-    for (var i = 0; i < this.leaderboard.length; i++) {
+    writer.writeUInt8(0x31);                               // Packet ID
+    writer.writeUInt32(this.leaderboardCount >>> 0);       // Number of elements
+    for (var i = 0; i < this.leaderboardCount; i++) {
         var item = this.leaderboard[i];
         if (item == null) return null;  // bad leaderboardm just don't send it
-        
+
         var name = item._nameUnicode;
         var id = 0;
-        if (item == player && item.cells.length > 0) {
+        if (item == player && item.cells.length > 0)
             id = item.cells[0].nodeId ^ this.playerTracker.scrambleId;
-        }
-        
+
+
         writer.writeUInt32(id >>> 0);   // Player cell Id
         if (name != null)
             writer.writeBytes(name);
@@ -82,21 +83,21 @@ UpdateLeaderboard.prototype.buildFfa5 = function () {
 };
 
 // FFA protocol 6
-UpdateLeaderboard.prototype.buildFfa6 = function () {
+UpdateLeaderboard.prototype.buildFfa6 = function(amount) {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null) {
+    if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
-    }
+
     var writer = new BinaryWriter();
-    writer.writeUInt8(0x31);                                // Packet ID
-    writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements
-    for (var i = 0; i < this.leaderboard.length; i++) {
+    writer.writeUInt8(0x31);                               // Packet ID
+    writer.writeUInt32(this.leaderboardCount >>> 0);       // Number of elements
+    for (var i = 0; i < this.leaderboardCount; i++) {
         var item = this.leaderboard[i];
-        if (item == null) return null;  // bad leaderboardm just don't send it
-        
+        if (item == null) return null;   // bad leaderboardm just don't send it
+
         var name = item._nameUtf8;
         var id = item == player ? 1 : 0;
-        
+
         writer.writeUInt32(id >>> 0);   // isMe flag
         if (name != null)
             writer.writeBytes(name);
@@ -107,20 +108,19 @@ UpdateLeaderboard.prototype.buildFfa6 = function () {
 };
 
 // FFA protocol 11
-UpdateLeaderboard.prototype.buildFfa11 = function () {
+UpdateLeaderboard.prototype.buildFfa11 = function(amount) {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null) {
+    if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
-    }
+
     var writer = new BinaryWriter();
-    writer.writeUInt8(0x31);                                // Packet ID
-    writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements
-    for (var i = 0; i < this.leaderboard.length; i++) {
+    writer.writeUInt8(0x31);                                 // Packet ID
+    writer.writeUInt32(this.leaderboardCount >>> 0);         // Number of elements
+    for (var i = 0; i < this.leaderboardCount; i++) {
         var item = this.leaderboard[i];
         if (item == null) return null;  // bad leaderboardm just don't send it
-        
+
         var name = item._nameUtf8;
-        
         if (name != null)
             writer.writeBytes(name);
         else
@@ -137,11 +137,11 @@ UpdateLeaderboard.prototype.buildTeam = function () {
     for (var i = 0; i < this.leaderboard.length; i++) {
         var value = this.leaderboard[i];
         if (value == null) return null;  // bad leaderboardm just don't send it
-        
+
         if (isNaN(value)) value = 0;
         value = value < 0 ? 0 : value;
         value = value > 1 ? 1 : value;
-        
+
         writer.writeFloat(value);                // isMe flag (previously cell ID)
     }
     return writer.toBuffer();
