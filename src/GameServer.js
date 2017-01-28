@@ -103,11 +103,10 @@ function GameServer() {
         /** FOOD **/
         foodMinSize: 10,            // Minimum food size (vanilla 10)
         foodMaxSize: 20,            // Maximum food size (vanilla 20)
-        foodMinAmount: 1000,        // Minimum food cells on the map
-        foodMaxAmount: 2000,        // Maximum food cells on the map
+        foodAmount: 1000,           // Amount of food cells on the map
+        foodPerMother: 2000,        // Maximum spawned food cells per mother cell
         foodSpawnAmount: 30,        // The number of food to spawn per interval
         foodMassGrow: 1,            // Enable food mass grow ?
-        spawnInterval: 20,          // The interval between each food cell spawn in ticks (1 tick = 40 ms)
 
         /** VIRUSES **/
         virusMinSize: 100,          // Minimum virus size. (vanilla: mass = val*val/100 = 100 mass)
@@ -564,6 +563,8 @@ GameServer.prototype.mainLoop = function() {
     var tStart = process.hrtime();
     var self = this;
 
+    this.leaderboardChanged = false;
+
     // Loop main functions
     if (this.run) {
         var i = 0, l = this.movingNodes.length,
@@ -605,28 +606,6 @@ GameServer.prototype.mainLoop = function() {
             }
         }
 
-        // Player cell moving, decay, remerge recalc & autosplit
-        l = this.nodesPlayer.length;
-
-        for (i = 0; i < l; i++) {
-            cell = this.nodesPlayer[i];
-            client = cell.owner;
-
-            if (!cell.owner || client.frozen)
-                continue;
-
-            // Move player cells
-            this.updateRemerge(cell, client);
-            this.boostCell(cell);
-            this.movePlayer(cell, client);
-            this.autoSplit(cell, client);
-
-            // Decay player cells once per second
-            if (((this.tickCounter + 3) % 25) === 0)
-                this.updateMassDecay(cell);
-            this.updateNodeQuad(cell);
-        }
-
         // Player cell collision & eating
         l = this.nodesPlayer.length;
         for (i = 0; i < l; i++) {
@@ -657,18 +636,49 @@ GameServer.prototype.mainLoop = function() {
             this.updateNodeQuad(cell);
         }
 
-        if ((this.tickCounter % this.config.spawnInterval) === 0)
-            // Spawn food & viruses
-            this.spawnCells(this.randomPos());
+        // Player cell moving, decay, remerge recalc & autosplit
+        l = this.nodesPlayer.length;
+
+        for (i = 0; i < l; i++) {
+            cell = this.nodesPlayer[i];
+            client = cell.owner;
+
+            if (!cell.owner || client.frozen)
+                continue;
+
+            // Move player cells
+            this.updateRemerge(cell, client);
+            this.boostCell(cell);
+            this.movePlayer(cell, client);
+            this.autoSplit(cell, client);
+
+            // Decay player cells once per second
+            if (((this.tickCounter + 3) % 25) === 0)
+                this.updateMassDecay(cell);
+            this.updateNodeQuad(cell);
+        }
+
+        // Spawn food & viruses
+        var sp = this.config.foodAmount - this.nodesFood.length;
+        while (sp > 0) {
+            this.spawnFood();
+            sp--;
+        }
+        sp = this.config.virusMinAmount - this.nodesVirus.length;
+        while (sp > 0) {
+            this.spawnVirus();
+            sp--;
+        }
 
         this.gameMode.onTick(this);
         this.tickCounter++;
     }
-    this.updateClients();
 
     // update leaderboard
     if (((this.tickCounter + 3) % 8) === 0)
         this.updateLeaderboard();
+
+    this.updateClients();
 
     // update internet usage
     if ((this.tickCounter % 25) === 0) {
@@ -862,6 +872,7 @@ GameServer.prototype.resolveCollision = function(m) {
 
     // check eating distance
     var div = this.config.mobilePhysics ? 20 : 3;
+    div = m.cell.cellType === 2 && m.check.cellType === 3 ? 20 : div;
     if (m.d >= check._size - cell._size / div)
         return; // too far => can't eat
 
@@ -869,7 +880,7 @@ GameServer.prototype.resolveCollision = function(m) {
     if (cell.owner && cell.owner == check.owner) {
         if (cell.getAge() < 13 || check.getAge() < 13)
             return; // just splited => ignore
-    } else if (check._size < cell._size * 1.14017 || !check.canEat(cell))
+    } else if (check._size < cell._size * 1.1401 || !check.canEat(cell))
         return; // Cannot eat or cell refuses to be eaten
 
     // Consume effect
@@ -913,29 +924,32 @@ GameServer.prototype.randomPos = function() {
     };
 };
 
-GameServer.prototype.spawnCells = function(pos) {
-    // spawn food at random size
-    var maxCount = this.config.foodMinAmount - this.nodesFood.length;
-    var spawnCount = Math.min(maxCount, this.config.foodSpawnAmount);
-    for (var i = 0; i < spawnCount; i++) {
-        var cell = new Entity.Food(this, null, this.randomPos(), this.config.foodMinSize);
-        if (this.config.foodMassGrow) {
-            var maxGrow = this.config.foodMaxSize - cell._size;
-            cell.setSize(cell._size += maxGrow * Math.random());
-        }
-        cell.setColor(this.getRandomColor());
-        this.addNode(cell);
+GameServer.prototype.spawnFood = function() {
+    var cell = new Entity.Food(this, null, this.randomPos(), this.config.foodMinSize),
+        pos = this.randomPos();
+
+    if (this.config.foodMassGrow) {
+        var maxGrow = this.config.foodMaxSize - cell._size;
+        cell.setSize(cell._size += maxGrow * Math.random());
+    }
+    cell.setColor(this.getRandomColor());
+    this.addNode(cell);
+}
+
+GameServer.prototype.spawnVirus = function() {
+    if (this.nodesVirus.length > this.config.virusMinAmount) return;
+    var pos = this.randomPos(),
+        attempts = 0,
+        size = this.config.virusMinSize;
+
+    while (this.willCollide(pos, size) && attempts <= 8) {
+        // Do not spawn
+        pos = this.randomPos();
+        attempts++;
     }
 
-    // spawn viruses (safely)
-    maxCount = this.config.virusMinAmount - this.nodesVirus.length;
-    spawnCount = Math.min(maxCount, 2);
-    for (var i = 0; i < spawnCount; i++) {
-        if (this.willCollide(pos, this.config.virusMinSize))
-            continue; // do not spawn
-        var v = new Entity.Virus(this, null, pos, this.config.virusMinSize);
-        this.addNode(v);
-    }
+    var v = new Entity.Virus(this, null, pos, size);
+    this.addNode(v);
 };
 
 GameServer.prototype.spawnPlayer = function(player, pos) {
