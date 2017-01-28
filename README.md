@@ -40,7 +40,7 @@ Version 1.5.1 bottleneck test with bots:
 
 ![Screenshot](http://i.imgur.com/A2dBZPH.jpg)
 
-*PC: Intel i5-6600k @ 4 x 3.5GHz, AMD Radeon R9 380 Series Crimson Edition, 16 GB DDR4 RAM, ASUS Z170 Gaming-K3*
+*PC: Intel i5-6600k @ 4 x 3.5GHz, AMD Radeon R9 380 Series Crimson Edition, 16 GB DDR4 RAM, ASUS Z170-Gaming K3*
 
 ## Install
 
