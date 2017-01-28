@@ -9,6 +9,7 @@ var PlayerTracker = require('./PlayerTracker');
 var PacketHandler = require('./PacketHandler');
 var Entity = require('./entity');
 var Logger = require('./modules/Logger');
+var Stopwatch = require('./Stopwatch');
 
 // GameServer implementation
 function GameServer() {
@@ -49,8 +50,6 @@ function GameServer() {
     this.startTime = Date.now();
     this.stepDateTime = 0;
     this.timeStamp = 0;
-    this.updateTime = 0;
-    this.updateTimeAvg = 0;
     this.timerLoopBind = null;
     this.mainLoopBind = null;
     this.tickCounter = 0;
@@ -152,6 +151,11 @@ function GameServer() {
     this.minionTest = [];
     this.userList = [];
     this.badWords = [];
+
+    this.updateTime = 0;
+    this.updateTimeAvg = 0;
+    this.updateTimes = { };
+    this.stopwatch = new Stopwatch();
 
     // Load files
     this.loadConfig();
@@ -559,8 +563,9 @@ GameServer.prototype.timerLoop = function() {
 
 GameServer.prototype.mainLoop = function() {
     this.stepDateTime = Date.now();
-    var tStart = process.hrtime();
+    var sw = this.stopwatch;
     var self = this;
+    sw.begin();
 
     this.leaderboardChanged = false;
 
@@ -580,6 +585,8 @@ GameServer.prototype.mainLoop = function() {
                 l--;
             }
         }
+
+        this.updateTimes.t1 = sw.lap();
 
         // Moving node collision
         for (i = 0; i < l; i++) {
@@ -604,6 +611,8 @@ GameServer.prototype.mainLoop = function() {
                 l--;
             }
         }
+
+        this.updateTimes.t2 = sw.lap();
 
         // Player cell collision & eating
         l = this.nodesPlayer.length;
@@ -635,6 +644,8 @@ GameServer.prototype.mainLoop = function() {
             this.updateNodeQuad(cell);
         }
 
+        this.updateTimes.t3 = sw.lap();
+
         // Player cell moving, decay, remerge recalc & autosplit
         l = this.nodesPlayer.length;
 
@@ -657,6 +668,8 @@ GameServer.prototype.mainLoop = function() {
             this.updateNodeQuad(cell);
         }
 
+        this.updateTimes.t4 = sw.lap();
+
         // Spawn food & viruses
         var sp = this.config.foodAmount - this.nodesFood.length;
         while (sp > 0) {
@@ -671,13 +684,18 @@ GameServer.prototype.mainLoop = function() {
 
         this.gameMode.onTick(this);
         this.tickCounter++;
+
+        this.updateTimes.t5 = sw.lap();
     }
 
     // update leaderboard
-    if (((this.tickCounter + 3) % 8) === 0)
+    if (((this.tickCounter + 3) % 8) === 0) {
         this.updateLeaderboard();
+        this.updateTimes.t6 = sw.lap();
+    }
 
     this.updateClients();
+    this.updateTimes.t7 = sw.lap();
 
     // update internet usage
     if ((this.tickCounter % 25) === 0) {
@@ -691,8 +709,9 @@ GameServer.prototype.mainLoop = function() {
         this.pingServerTracker(); // once per 30 seconds
 
     // update-update time
-    var tEnd = process.hrtime(tStart);
-    this.updateTime = tEnd[0] * 1e3 + tEnd[1] / 1e6;
+    this.updateTimes.t8 = sw.lap();
+    this.updateTime = sw.elapsed();
+    sw.stop();
 };
 
 // update remerge first
