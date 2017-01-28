@@ -8,7 +8,7 @@
  */
 
 function BinaryWriter() {
-    this._buffer = new Buffer(1e5);
+    this._buffer = parseInt(process.version[1]) < 6 ? new Buffer(1e5) : Buffer.allocUnsafe(1e5);
     this._length = 0;
 }
 
