@@ -573,7 +573,9 @@ GameServer.prototype.mainLoop = function() {
     if (this.run) {
         var i = 0, l = this.movingNodes.length,
             cell,
-            client;
+            client,
+            processedRigids = 0,
+            processedEats = 0;
 
         // Moving nodes moving
         for (; i < l; i++) {
@@ -597,10 +599,13 @@ GameServer.prototype.mainLoop = function() {
                 if (check.cell.cellType === 0 || check.cell.cellType === 1) return;
                 if (check.cell === cell) return;
                 var m = self.checkCellCollision(cell, check.cell);
-                if (cell.cellType === 3 && check.cell.cellType === 3 && !self.config.mobilePhysics)
+                if (cell.cellType === 3 && check.cell.cellType === 3 && !self.config.mobilePhysics) {
                     self.resolveRigidCollision(m);
-                else
+                    processedRigids++;
+                } else {
                     self.resolveCollision(m);
+                    processedEats++;
+                }
                 if (check.cell.isRemoved && check.cell.isMoving) {
                     i--;
                     l--;
@@ -612,7 +617,12 @@ GameServer.prototype.mainLoop = function() {
             }
         }
 
+        this.updateTimes.pmr = processedRigids;
+        this.updateTimes.pme = processedEats;
         this.updateTimes.t2 = sw.lap();
+
+        processedRigids = 0;
+        processedEats = 0;
 
         // Player cell collision & eating
         l = this.nodesPlayer.length;
@@ -626,14 +636,16 @@ GameServer.prototype.mainLoop = function() {
                 if (cell.isRemoved || check.isRemoved) return;
                 if (check.cell === cell) return;
                 var m = self.checkCellCollision(cell, check.cell);
-                if (self.checkRigidCollision(m))
+                if (self.checkRigidCollision(m)) {
                     self.resolveRigidCollision(m);
-                else {
+                    processedRigids++;
+                } else {
                     self.resolveCollision(m);
                     if (check.cell.isRemoved && check.cell.cellType === 0) {
                         i--;
                         l--;
                     }
+                    processedEats++;
                 }
             });
             if (cell.isRemoved || !cell) {
@@ -641,14 +653,15 @@ GameServer.prototype.mainLoop = function() {
                 l--;
                 continue;
             }
-            this.updateNodeQuad(cell);
         }
 
+        this.updateTimes.ppr = processedRigids;
+        this.updateTimes.ppe = processedEats;
         this.updateTimes.t3 = sw.lap();
 
         // Player cell moving, decay, remerge recalc & autosplit
         l = this.nodesPlayer.length;
-
+        var updDecay = ((this.tickCounter + 3) % 25) === 0;
         for (i = 0; i < l; i++) {
             cell = this.nodesPlayer[i];
             client = cell.owner;
@@ -662,9 +675,8 @@ GameServer.prototype.mainLoop = function() {
             this.movePlayer(cell, client);
             this.autoSplit(cell, client);
 
-            // Decay player cells once per second
-            if (((this.tickCounter + 3) % 25) === 0)
-                this.updateMassDecay(cell);
+            if (updDecay) this.updateMassDecay(cell);
+
             this.updateNodeQuad(cell);
         }
 
