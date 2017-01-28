@@ -12,10 +12,8 @@ UpdateNodes.prototype.build = function (protocol) {
     if (!protocol) return null;
     
     var BinaryWriter = require("./BinaryWriter");
-    var sharedWriter = new BinaryWriter(128*1024); // for about 25000 cells per client
-    var writer = sharedWriter;
-    writer.reset();
-    writer.writeUInt8(0x10);                                // Packet ID
+    var writer = new BinaryWriter();
+    writer.writeUInt8(0x10);    // Packet ID
     this.writeEatItems(writer);
     
     if (protocol < 5) this.writeUpdateItems4(writer);
@@ -41,8 +39,8 @@ UpdateNodes.prototype.writeUpdateItems4 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt16(cellX >> 0);                // Coordinate X
-        writer.writeInt16(cellY >> 0);                // Coordinate Y
+        writer.writeUInt16(cellX >> 0);                // Coordinate X
+        writer.writeUInt16(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         var color = node.color;
         writer.writeUInt8(color.r >>> 0);         // Color R
@@ -73,8 +71,8 @@ UpdateNodes.prototype.writeUpdateItems4 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt16(cellX >> 0);                // Coordinate X
-        writer.writeInt16(cellY >> 0);                // Coordinate Y
+        writer.writeUInt16(cellX >> 0);                // Coordinate X
+        writer.writeUInt16(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         var color = node.color;
         writer.writeUInt8(color.r >>> 0);         // Color R
@@ -113,8 +111,8 @@ UpdateNodes.prototype.writeUpdateItems5 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt32(cellX >> 0);                // Coordinate X
-        writer.writeInt32(cellY >> 0);                // Coordinate Y
+        writer.writeUInt32(cellX >> 0);                // Coordinate X
+        writer.writeUInt32(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         var color = node.color;
         writer.writeUInt8(color.r >>> 0);         // Color R
@@ -148,8 +146,8 @@ UpdateNodes.prototype.writeUpdateItems5 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt32(cellX >> 0);                // Coordinate X
-        writer.writeInt32(cellY >> 0);                // Coordinate Y
+        writer.writeUInt32(cellX >> 0);                // Coordinate X
+        writer.writeUInt32(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         var color = node.color;
         writer.writeUInt8(color.r >>> 0);         // Color R
@@ -193,8 +191,8 @@ UpdateNodes.prototype.writeUpdateItems6 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt32(cellX >> 0);                // Coordinate X
-        writer.writeInt32(cellY >> 0);                // Coordinate Y
+        writer.writeUInt32(cellX >> 0);                // Coordinate X
+        writer.writeUInt32(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         
         var flags = 0;
@@ -231,8 +229,8 @@ UpdateNodes.prototype.writeUpdateItems6 = function (writer) {
         
         // Write update record
         writer.writeUInt32((node.nodeId ^ scrambleId) >>> 0);         // Cell ID
-        writer.writeInt32(cellX >> 0);                // Coordinate X
-        writer.writeInt32(cellY >> 0);                // Coordinate Y
+        writer.writeUInt32(cellX >> 0);                // Coordinate X
+        writer.writeUInt32(cellY >> 0);                // Coordinate Y
         writer.writeUInt16(node._size >>> 0);     // Cell Size (not to be confused with mass, because mass = size*size/100)
         
         var flags = 0;
