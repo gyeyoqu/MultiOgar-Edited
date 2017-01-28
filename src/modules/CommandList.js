@@ -74,6 +74,7 @@ Commands.list = {
                     "│                                                                          │\n"+
                     "│ clear                        │ Clear console output                      │\n"+
                     "│ reset                        │ Removes all nodes                         │\n"+
+                    "| bottleneck                   | Get update time diagnosis                 |\n"+
                     "│ status                       │ Get server status                         │\n"+
                     "│ debug                        │ Get/check node lengths                    │\n"+
                     "│ exit                         │ Stop the server                           │\n"+
@@ -87,6 +88,7 @@ Commands.list = {
                     "                       │ LIST OF COMMAND SHORTCUTS  │                       \n"+
                     "┌──────────────────────┴──────┬─────────────────────┴──────────────────────┐\n"+
                     "│ st                          │ Alias for status                           │\n"+
+                    "| bk                          | Alias for bottleneck                       |\n"+
                     "│ pl                          │ Alias for playerlist                       │\n"+
                     "│ m                           │ Alias for mass                             │\n"+
                     "│ sm                          │ Alias for spawnmass                        │\n"+
@@ -107,19 +109,33 @@ Commands.list = {
     debug: function(gameServer, split) {
         // Count client cells
         var clientCells = 0;
-        for (var i in gameServer.clients) {
+        for (var i in gameServer.clients)
             clientCells += gameServer.clients[i].playerTracker.cells.length;
-        }
+
         // Output node information
        Logger.print("Clients:        " + fillChar(gameServer.clients.length, " ", 4, true) + " / " + gameServer.config.serverMaxConnections + " + bots"+"\n"+
                     "Total nodes:" + fillChar(gameServer.nodes.length, " ", 8, true)+"\n"+
                     "- Client cells: " + fillChar(clientCells, " ", 4, true) + " / " + (gameServer.clients.length * gameServer.config.playerMaxCells)+"\n"+
                     "- Ejected cells:" + fillChar(gameServer.nodesEjected.length, " ", 4, true)+"\n"+
-                    "- Food:        " + fillChar(gameServer.nodesFood.length, " ", 4, true) + " / " + gameServer.config.foodAmount+"\n"+
+                    "- Food:         " + fillChar(gameServer.nodesFood.length, " ", 4, true) + " / " + gameServer.config.foodAmount+"\n"+
                     "- Viruses:      " + fillChar(gameServer.nodesVirus.length, " ", 4, true) + " / " + gameServer.config.virusMaxAmount+"\n"+
                     "Moving nodes:   " + fillChar(gameServer.movingNodes.length, " ", 4, true)+"\n"+
                     "Quad nodes:     " + fillChar(gameServer.quadTree.scanNodeCount(), " ", 4, true)+"\n"+
                     "Quad items:     " + fillChar(gameServer.quadTree.scanItemCount(), " ", 4, true));
+    },
+    bottleneck: function(gameServer, split) {
+        var ts = gameServer.updateTimes,
+            tu = gameServer.updateTime;
+
+        Logger.print("Time to update: " + tu + " / 40 ms");
+        Logger.print("- Moving cell updates:    " + (ts.t1 / tu * 100).toFixed(2) + "% (" + ts.t1.toFixed(1) + " ms)");
+        Logger.print("- Moving cell collisions: " + (ts.t2 / tu * 100).toFixed(2) + "% (" + ts.t2.toFixed(1) + " ms)");
+        Logger.print("- Player cell collisions: " + (ts.t3 / tu * 100).toFixed(2) + "% (" + ts.t3.toFixed(1) + " ms)");
+        Logger.print("- Player cell moving:     " + (ts.t4 / tu * 100).toFixed(2) + "% (" + ts.t4.toFixed(1) + " ms)");
+        Logger.print("- Spawning:               " + (ts.t5 / tu * 100).toFixed(2) + "% (" + ts.t5.toFixed(1) + " ms)");
+        Logger.print("- Leaderboard update:     " + (ts.t6 / tu * 100).toFixed(2) + "% (" + ts.t6.toFixed(1) + " ms)");
+        Logger.print("- Client update:          " + (ts.t7 / tu * 100).toFixed(2) + "% (" + ts.t7.toFixed(1) + " ms)");
+        Logger.print("- Final touches:          " + (ts.t8 / tu * 100).toFixed(2) + "% (" + ts.t8.toFixed(1) + " ms)");
     },
     reset: function(gameServer, split) {
         Logger.warn("Removed " + gameServer.nodes.length + " nodes");
@@ -816,7 +832,8 @@ Commands.list = {
         Logger.print("Server has been running for " + Math.floor(process.uptime() / 60) + " minutes");
         Logger.print("Current memory usage: " + Math.round(process.memoryUsage().heapUsed / 1048576 * 10) / 10 + "/" + Math.round(process.memoryUsage().heapTotal / 1048576 * 10) / 10 + " mb");
         Logger.print("Current game mode: " + gameServer.gameMode.name);
-        Logger.print("Current update time: " + gameServer.updateTimeAvg.toFixed(3) + " [ms]  (" + ini.getLagMessage(gameServer.updateTimeAvg) + ")");
+        var load = (gameServer.updateTimeAvg / 40) * 100;
+        Logger.print("Current server load: " + load.toFixed(2) + "%  (" + gameServer.updateTimeAvg.toFixed(3) + " / 40 ms)");
         Logger.print("Average internet usage (Down/Up): " + (gameServer.downloadAvg / 1000).toFixed(2) + " kbps / " + (gameServer.uploadAvg / 1000).toFixed(2) + " kbps");
     },
     tp: function(gameServer, split) {
@@ -992,6 +1009,9 @@ Commands.list = {
 
     st: function(gameServer, split) { // Status
         Commands.list.status(gameServer, split);
+    },
+    bk: function(gameServer, split) { // Kill
+        Commands.list.bottleneck(gameServer, split);
     },
     pl: function(gameServer, split) { // Playerlist
         Commands.list.playerlist(gameServer, split);
