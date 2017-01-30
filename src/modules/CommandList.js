@@ -132,14 +132,15 @@ Commands.list = {
         Logger.print("- Moving cell collisions: " + (ts.t2 / tu * 100).toFixed(2) + "% (" + ts.t2.toFixed(1) + " ms)");
         Logger.print(" - Of which rigid:        " + ts.pmr);
         Logger.print(" - Of which eats:         " + ts.pme);
-        Logger.print("- Player cell collisions: " + (ts.t3 / tu * 100).toFixed(2) + "% (" + ts.t3.toFixed(1) + " ms)");
+        Logger.print("- Player cell moving:     " + (ts.t3 / tu * 100).toFixed(2) + "% (" + ts.t3.toFixed(1) + " ms)");
+		Logger.print("- Player cell collisions: " + (ts.t4 / tu * 100).toFixed(2) + "% (" + ts.t4.toFixed(1) + " ms)");
         Logger.print(" - Of which rigid:        " + ts.ppr);
         Logger.print(" - Of which eats:         " + ts.ppe);
-        Logger.print("- Player cell moving:     " + (ts.t4 / tu * 100).toFixed(2) + "% (" + ts.t4.toFixed(1) + " ms)");
         Logger.print("- Spawning:               " + (ts.t5 / tu * 100).toFixed(2) + "% (" + ts.t5.toFixed(1) + " ms)");
-        Logger.print("- Leaderboard update:     " + (ts.t6 / tu * 100).toFixed(2) + "% (" + ts.t6.toFixed(1) + " ms)");
-        Logger.print("- Client update:          " + (ts.t7 / tu * 100).toFixed(2) + "% (" + ts.t7.toFixed(1) + " ms)");
-        Logger.print("- Final touches:          " + (ts.t8 / tu * 100).toFixed(2) + "% (" + ts.t8.toFixed(1) + " ms)");
+        Logger.print("- Gamemode update:        " + (ts.t6 / tu * 100).toFixed(2) + "% (" + ts.t6.toFixed(1) + " ms)");
+        Logger.print("- Leaderboard update:     " + (ts.t7 / tu * 100).toFixed(2) + "% (" + ts.t7.toFixed(1) + " ms)");
+        Logger.print("- Client update:          " + (ts.t8 / tu * 100).toFixed(2) + "% (" + ts.t8.toFixed(1) + " ms)");
+        Logger.print("- Final touches:          " + (ts.t9 / tu * 100).toFixed(2) + "% (" + ts.t9.toFixed(1) + " ms)");
     },
     reset: function(gameServer, split) {
         Logger.warn("Removed " + gameServer.nodes.length + " nodes");

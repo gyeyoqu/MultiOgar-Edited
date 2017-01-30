@@ -27,7 +27,6 @@ function PlayerTracker(gameServer, socket) {
     this.team = 0;
     this.spectate = false;
     this.freeRoam = false;      // Free-roam mode enables player to move in spectate mode
-    this.spectateTarget = null; // Spectate target, null for largest player
     this.lastKeypressTick = 0;
 
     this.centerPos = {
@@ -165,7 +164,6 @@ PlayerTracker.prototype.joinGame = function(name, skin) {
     this.setName(name);
     this.spectate = false;
     this.freeRoam = false;
-    this.spectateTarget = null;
 
     // some old clients don't understand ClearAll message
     // so we will send update for them
@@ -227,6 +225,21 @@ PlayerTracker.prototype.checkConnection = function() {
     }
 };
 
+PlayerTracker.prototype.getViewState = function() {
+    if (!this.spectate) {
+        // in game
+        return 0;
+    } else {
+        if (this.freeRoam || this.getSpectateTarget() == null) {
+            // free roam
+            return 1;
+        } else {
+            // spectate target
+            return 2;
+        }
+    }
+};
+
 PlayerTracker.prototype.updateTick = function() {
     if (this.isRemoved || this.isMinion)
         return; // do not update
@@ -234,18 +247,18 @@ PlayerTracker.prototype.updateTick = function() {
 
     // update spectators
     if (this.isMi) return;
-    if (!this.spectate) {
-        // in game
-        this.updateCenterInGame();
-    } else {
-        if (this.freeRoam || this.getSpectateTarget() == null) {
-            // free roam
+
+    // update center
+    switch (this.getViewState()) {
+        case 0:
+            this.updateCenterInGame();
+            break;
+        case 1:
             this.updateCenterFreeRoam();
             this._scale = this.gameServer.config.serverSpectatorScale;
-        } else {
-            // spectate target
+            break;
+        default:
             return;
-        }
     }
 
     // update viewbox
@@ -282,8 +295,9 @@ PlayerTracker.prototype.sendUpdate = function() {
         return;
     }
 
-    if (this.spectate) {
-        if (!this.freeRoam) {
+    var v = this.getViewState();
+    if (v !== 0) {
+        if (v === 2) {
             // spectate target
             var player = this.getSpectateTarget();
             if (player) {
@@ -293,7 +307,8 @@ PlayerTracker.prototype.sendUpdate = function() {
                 this.viewNodes = player.viewNodes;
             }
         }
-        // sends camera packet
+
+        // send camera packet
         this.socket.sendPacket(new Packet.UpdatePosition(
             this, this.centerPos.x, this.centerPos.y, this.getScale()
         ));
@@ -359,10 +374,15 @@ PlayerTracker.prototype.sendUpdate = function() {
     this.clientNodes = this.viewNodes;
 
     // Send packet
-    this.socket.sendPacket(new Packet.UpdateNodes(
-        this, addNodes, updNodes, eatNodes, delNodes)
-    );
+    if (this.socket.isConnected != null) {
+        this.socket.sendPacket(new Packet.UpdateNodes(
+            this, addNodes, updNodes, eatNodes, delNodes
+        ));
+        this.sendLeaderboard();
+    }
+};
 
+PlayerTracker.prototype.sendLeaderboard = function() {
     // Update leaderboard if changed
     if (this.gameServer.leaderboardChanged) {
         var lbType = this.gameServer.leaderboardType,
@@ -403,22 +423,7 @@ PlayerTracker.prototype.updateCenterFreeRoam = function() {
 };
 
 PlayerTracker.prototype.pressSpace = function() {
-    if (this.spectate) {
-        // Check for spam first (to prevent too many add/del updates)
-        var tick = this.gameServer.tickCounter;
-        if (tick - this.lastKeypressTick < 40)
-            return;
-        this.lastKeypressTick = tick;
-
-        // Space doesn't work for freeRoam mode
-        if (this.freeRoam || this.gameServer.largestClient === null)
-            return;
-
-    } else if (this.gameServer.run) {
-        // Disable mergeOverride on the last merging cell
-        if (this.cells.length <= 2) {
-            this.mergeOverride = false;
-        }
+    if (this.gameServer.run && this.cells.length > 0) {
         // Cant split if merging or frozen
         if (this.mergeOverride || this.frozen)
             return;
@@ -427,34 +432,26 @@ PlayerTracker.prototype.pressSpace = function() {
 };
 
 PlayerTracker.prototype.pressW = function() {
-    if (this.spectate) {
+    if (this.getViewState() !== 0)
         return;
-    } else if (this.gameServer.run) {
+    else if (this.gameServer.run)
         this.gameServer.ejectMass(this);
-    }
 };
 
 PlayerTracker.prototype.pressQ = function() {
-    if (this.spectate) {
+    if (this.getViewState() !== 0) {
         // Check for spam first (to prevent too many add/del updates)
         var tick = this.gameServer.tickCounter;
         if (tick - this.lastKeypressTick < 40)
             return;
         this.lastKeypressTick = tick;
 
-        if (this.spectateTarget == null) {
-            this.freeRoam = !this.freeRoam;
-        }
-        this.spectateTarget = null;
+        this.freeRoam = !this.freeRoam;
     }
 };
 
 PlayerTracker.prototype.getSpectateTarget = function() {
-    if (this.spectateTarget == null || this.spectateTarget.isRemoved || !this.spectateTarget.cells.length) {
-        this.spectateTarget = null;
-        return this.gameServer.largestClient;
-    }
-    return this.spectateTarget;
+    return this.gameServer.largestClient;
 };
 
 PlayerTracker.prototype.setCenterPos = function(x, y) {

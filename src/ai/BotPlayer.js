@@ -23,13 +23,6 @@ BotPlayer.prototype.largest = function(list) {
 };
 
 BotPlayer.prototype.checkConnection = function() {
-    if (this.socket.isCloseRequest) {
-        while (this.cells.length)
-            this.gameServer.removeNode(this.cells[0]);
-
-        this.isRemoved = true;
-        return;
-    }
     // Respawn if bot is dead
     if (!this.cells.length) {
         this.gameServer.gameMode.onPlayerSpawn(this.gameServer, this);
@@ -203,6 +196,6 @@ BotPlayer.prototype.canSplitkill = function(cell, check, distance) {
     if (check.cellType === 2)
         // Swap playerSplitVelocity with virusVelocity
         return this.gameServer.config.virusVelocity * 1.3 - cell._size / 2 - check._size >= distance;
-    var splitDist = Math.max(this.gameServer.config.splitVelocity * 1.3, cell._size / 1.41421356 * 4.5);
+    var splitDist = Math.max(this.gameServer.config.splitVelocity * 0.8, cell._size / 1.41421356 * 4.5);
     return splitDist >= distance;
 };

@@ -7,23 +7,26 @@ function UpdateLeaderboard(playerTracker, leaderboard, leaderboardType) {
     this.leaderboard = leaderboard;
     this.leaderboardType = leaderboardType;
     this.leaderboardCount = Math.min(leaderboard.length, playerTracker.gameServer.config.serverMaxLB);
+
+    if (this.leaderboardType === 0x30 && playerTracker.socket.packetHandler.protocol >= 11)
+        this.leaderboardType = 0x31;
 }
 
 module.exports = UpdateLeaderboard;
 
 UpdateLeaderboard.prototype.build = function(protocol) {
     switch (this.leaderboardType) {
-        case 48:
+        case 0x30:
             // UserText
             return this.buildUserText(protocol);
-        case 49:
+        case 0x31:
             // FFA
             if (protocol < 6)
                 return this.buildFfa5();
             else if (protocol < 11)
                 return this.buildFfa6();
             else return this.buildFfa11();
-        case 50:
+        case 0x32:
             // Team
             return this.buildTeam();
         default:
@@ -34,28 +37,25 @@ UpdateLeaderboard.prototype.build = function(protocol) {
 // UserText
 UpdateLeaderboard.prototype.buildUserText = function(protocol) {
     var writer = new BinaryWriter();
-    writer.writeUInt8(0x31);                                // Packet ID
-    writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements
+    writer.writeUInt8(protocol < 6 ? 0x31 : 0x30);
+    writer.writeUInt32(this.leaderboard.length >>> 0);
     for (var i = 0; i < this.leaderboard.length; i++) {
         var item = this.leaderboard[i];
-        if (item == null) return null;  // bad leaderboardm just don't send it
+        item = item || "";
 
-        var name = item;
-        name = name ? name : "";
-        var id = 0;
-
-        if (protocol < 11)
-        writer.writeUInt32(id >> 0);                        // isMe flag/cell ID
         if (protocol < 6)
-            writer.writeStringZeroUnicode(name);
+            writer.writeUInt32(0);
+
+        if (protocol < 6)
+            writer.writeStringZeroUnicode(item);
         else
-            writer.writeStringZeroUtf8(name);
+            writer.writeStringZeroUtf8(item);
     }
     return writer.toBuffer();
 };
 
 // FFA protocol 5
-UpdateLeaderboard.prototype.buildFfa5 = function(amount) {
+UpdateLeaderboard.prototype.buildFfa5 = function() {
     var player = this.playerTracker;
     if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
@@ -83,7 +83,7 @@ UpdateLeaderboard.prototype.buildFfa5 = function(amount) {
 };
 
 // FFA protocol 6
-UpdateLeaderboard.prototype.buildFfa6 = function(amount) {
+UpdateLeaderboard.prototype.buildFfa6 = function() {
     var player = this.playerTracker;
     if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
@@ -108,7 +108,7 @@ UpdateLeaderboard.prototype.buildFfa6 = function(amount) {
 };
 
 // FFA protocol 11
-UpdateLeaderboard.prototype.buildFfa11 = function(amount) {
+UpdateLeaderboard.prototype.buildFfa11 = function() {
     var player = this.playerTracker;
     if (player.spectate && player.spectateTarget != null)
         player = player.spectateTarget;
@@ -130,7 +130,7 @@ UpdateLeaderboard.prototype.buildFfa11 = function(amount) {
 };
 
 // Team
-UpdateLeaderboard.prototype.buildTeam = function () {
+UpdateLeaderboard.prototype.buildTeam = function() {
     var writer = new BinaryWriter();
     writer.writeUInt8(0x32);                                // Packet ID
     writer.writeUInt32(this.leaderboard.length >>> 0);       // Number of elements

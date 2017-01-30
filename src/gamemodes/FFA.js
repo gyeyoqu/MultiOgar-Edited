@@ -22,29 +22,22 @@ FFA.prototype.onPlayerSpawn = function(gameServer, player) {
 FFA.prototype.updateLB = function(gameServer) {
     gameServer.leaderboardType = this.packetLB;
     var lb = [],
-        i = 0,
-        l = gameServer.clients.length,
-        iPush, client, score;
+        i = 0, l = gameServer.clients.length,
+        client, pushi, s, ri = 0;
 
     for (; i < l; i++) {
         client = gameServer.clients[i];
         if (client.isRemoved) continue;
         if (client.playerTracker.cells.length <= 0) continue;
 
-        lb.push(client.playerTracker);
-    }
+        for (pushi = 0; pushi < ri; pushi++)
+            if (lb[pushi]._score < client.playerTracker._score) break;
 
-    lb.sort(scoreSort);
+        lb.splice(pushi, 0, client.playerTracker);
+        ri++;
+    }
 
     gameServer.leaderboard = lb;
     this.rankOne = lb[0];
     gameServer.leaderboardChanged = true;
 };
-
-function scoreSort(a, b) {
-    try {
-        return b._score - a._score;
-    } catch (e) {
-        return 0;
-    }
-}

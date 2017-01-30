@@ -23,17 +23,20 @@ PlayerCell.prototype.getSpeed = function(dist) {
 };
 
 PlayerCell.prototype.onAdd = function(gameServer) {
-    gameServer.nodesPlayer.push(this);
-
-    // Gamemode actions
-    gameServer.gameMode.onCellAdd(this);
+    gameServer.nodesPlayer.unshift(this);
 };
 
 PlayerCell.prototype.onRemove = function(gameServer) {
-    // Remove from player cell list
+    // Remove from owned cell list
     var index = this.owner.cells.indexOf(this);
-    if (index != -1) this.owner.cells.splice(index, 1);
+    if (index != -1) {
+        this.owner.cells.splice(index, 1);
+        // Disable mergeOverride on the last merging cell
+        if (this.owner.cells.length <= 2)
+            this.owner.mergeOverride = false;
+    }
 
+    // Remove from player cell list
     index = gameServer.nodesPlayer.indexOf(this);
     if (index != -1) gameServer.nodesPlayer.splice(index, 1);
 

@@ -1,6 +1,4 @@
-﻿var BinaryWriter = require("./BinaryWriter");
-
-function UpdatePosition(playerTracker, x, y, scale) {
+﻿function UpdatePosition(playerTracker, x, y, scale) {
     this.playerTracker = playerTracker,
     this.x = x;
     this.y = y;
@@ -10,10 +8,15 @@ function UpdatePosition(playerTracker, x, y, scale) {
 module.exports = UpdatePosition;
 
 UpdatePosition.prototype.build = function (protocol) {
-    var writer = new BinaryWriter();
-    writer.writeUInt8(0x11);
-    writer.writeFloat(this.x + this.playerTracker.scrambleX);
-    writer.writeFloat(this.y + this.playerTracker.scrambleY);
-    writer.writeFloat(this.scale);
-    return writer.toBuffer();
+    var buffer = new Buffer(13);
+    var offset = 0;
+    buffer.writeUInt8(0x11, offset, true);
+    offset += 1;
+    buffer.writeFloatLE(this.x + this.playerTracker.scrambleX, offset, true);
+    offset += 4;
+    buffer.writeFloatLE(this.y + this.playerTracker.scrambleY, offset, true);
+    offset += 4;
+    buffer.writeFloatLE(this.scale, offset, true);
+    offset += 4;
+    return buffer;
 };

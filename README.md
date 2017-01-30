@@ -3,7 +3,7 @@ Ogar game server with fast and smooth vanilla physics and multi-protocol support
 
 Since Barbosik stopped working on the original MultiOgar, I decided to continue it on this fork =D
 
-Current version: **1.5.1**
+Current version: **1.6.0**
 
 ## Project Info
 ![Language](https://img.shields.io/badge/language-node.js-yellow.svg)
@@ -32,15 +32,13 @@ MultiOgar console:
 
 ![Screenshot](http://i.imgur.com/PtKj86E.png)
 
-Version 1.5.1 bottleneck test with bots:
-* 1000 bots, 1 player, 50 viruses, 1000 pellets, map 14142x14142
-* Update time: 34 milliseconds / 40 maximum
-* CPU load: 84% (single core)
-* Memory usage: 62 MB
+Version 1.2.8: 
+* 1000 bots, 500 viruses, 1000 foods, map 14142x14142
+* Works very-very smooth (with a little slower speed, but it will not be noticed by user).
+* CPU load: 14% (x4 core)
+* Memory usage: 70 MB
 
-![Screenshot](http://i.imgur.com/A2dBZPH.jpg)
-
-*PC: Intel i5-6600k @ 4 x 3.5GHz, AMD Radeon R9 380 Series Crimson Edition, 16 GB DDR4 RAM, ASUS Z170-Gaming K3*
+![Screenshot](http://i.imgur.com/XsXjT0o.png)
 
 ## Install
 
@@ -127,7 +125,7 @@ Just replace `127.0.0.1:443` in the url to the server IP and port to play.
 
 URL | Protocol | Description
 --- | --- | ---
-http://agar.io/?ip=127.0.0.1:443 | 11 | Vanilla
+http://agar.io/?ip=127.0.0.1:443 | 8 | Vanilla
 http://ogar.mivabe.nl/?ip=127.0.0.1:443 | early 5 | MivaBe, pretty smooth, custom graphics (anime)
 http://old.ogarul.io/?ip=127.0.0.1:443 | 4 | OgarUL, old vanilla style
 http://c0nsume.me/private4.php?ip=127.0.0.1:443 | 5 | Vanilla style

@@ -18,7 +18,7 @@ function GameServer() {
 
     // Startup
     this.run = true;
-    this.version = '1.5.1';
+    this.version = '1.6.0';
     this.httpServer = null;
     this.commands = null;
     this.lastNodeId = 1;
@@ -47,8 +47,7 @@ function GameServer() {
     this.bots = new BotLoader(this);
 
     // Main loop tick
-    this.startTime = Date.now();
-    this.stepDateTime = 0;
+    this.startTime = this.stepDateTime = Date.now();
     this.timeStamp = 0;
     this.timerLoopBind = null;
     this.mainLoopBind = null;
@@ -179,9 +178,6 @@ GameServer.prototype.start = function() {
     this.timerLoopBind = this.timerLoop.bind(this);
     this.mainLoopBind = this.mainLoop.bind(this);
 
-    // Gamemode configurations
-    this.gameMode.onServerInit(this);
-
     // Client Binding
     var bind = this.config.clientBind + "";
     this.clientBind = bind.split(' - ');
@@ -201,9 +197,11 @@ GameServer.prototype.start = function() {
     this.httpServer.listen(this.config.serverPort, this.config.serverBind, this.onHttpServerOpen.bind(this));
 
     // Start stats port (if needed)
-    if (this.config.serverStatsPort > 0) {
+    if (this.config.serverStatsPort > 0)
         this.startStatsServer(this.config.serverStatsPort);
-    }
+
+    // Gamemode configurations
+    this.gameMode.onServerInit(this);
 };
 
 GameServer.prototype.onHttpServerOpen = function() {
@@ -216,9 +214,9 @@ GameServer.prototype.onHttpServerOpen = function() {
 
     // Player bots (Experimental)
     if (this.config.serverBots) {
-        for (var i = 0; i < this.config.serverBots; i++) {
+        for (var i = 0; i < this.config.serverBots; i++)
             this.bots.addBot();
-        }
+
         Logger.info("Added " + this.config.serverBots + " player bots");
     }
 };
@@ -244,6 +242,9 @@ GameServer.prototype.addNode = function(node) {
 
     // Special on-add actions
     node.onAdd(this);
+
+    // Gamemode actions
+    this.gameMode.onCellAdd(node);
 };
 
 GameServer.prototype.onServerSocketError = function(error) {
@@ -460,14 +461,12 @@ GameServer.prototype.updateClients = function() {
     }
 
     // update
-    for (var i = 0; i < len; i++) {
-    	if (!this.clients[i]) continue;
+    len = this.clients.length;
+    for (var i = 0; i < len; i++)
         this.clients[i].playerTracker.updateTick();
-    }
-    for (var i = 0; i < len; i++) {
-    	if (!this.clients[i]) continue;
+
+    for (var i = 0; i < len; i++)
         this.clients[i].playerTracker.sendUpdate();
-    }
 };
 
 GameServer.prototype.updateLeaderboard = function() {
@@ -621,10 +620,7 @@ GameServer.prototype.mainLoop = function() {
         this.updateTimes.pme = processedEats;
         this.updateTimes.t2 = sw.lap();
 
-        processedRigids = 0;
-        processedEats = 0;
-
-        // Player cell collision & eating
+		// Player cell collision & eating
         l = this.nodesPlayer.length;
         for (i = 0; i < l; i++) {
             cell = this.nodesPlayer[i];
@@ -636,10 +632,7 @@ GameServer.prototype.mainLoop = function() {
                 if (cell.isRemoved || check.isRemoved) return;
                 if (check.cell === cell) return;
                 var m = self.checkCellCollision(cell, check.cell);
-                if (self.checkRigidCollision(m)) {
-                    self.resolveRigidCollision(m);
-                    processedRigids++;
-                } else {
+                if (!self.checkRigidCollision(m)) {
                     self.resolveCollision(m);
                     if (check.cell.isRemoved && check.cell.cellType === 0) {
                         i--;
@@ -657,9 +650,13 @@ GameServer.prototype.mainLoop = function() {
 
         this.updateTimes.ppr = processedRigids;
         this.updateTimes.ppe = processedEats;
+
         this.updateTimes.t3 = sw.lap();
 
-        // Player cell moving, decay, remerge recalc & autosplit
+		processedRigids = 0;
+        processedEats = 0;
+
+		// Player cell moving, decay, remerge recalc & autosplit
         l = this.nodesPlayer.length;
         var updDecay = ((this.tickCounter + 3) % 25) === 0;
         for (i = 0; i < l; i++) {
@@ -674,6 +671,15 @@ GameServer.prototype.mainLoop = function() {
             this.boostCell(cell);
             this.movePlayer(cell, client);
             this.autoSplit(cell, client);
+
+			this.quadTree.find(cell.quadItem.bound, function(check) {
+                if (check.cell === cell) return;
+                var m = self.checkCellCollision(cell, check.cell);
+                if (self.checkRigidCollision(m)) {
+                    self.resolveRigidCollision(m);
+                    processedEats++;
+                }
+            });
 
             if (updDecay) this.updateMassDecay(cell);
 
@@ -694,20 +700,21 @@ GameServer.prototype.mainLoop = function() {
             sp--;
         }
 
-        this.gameMode.onTick(this);
-        this.tickCounter++;
-
         this.updateTimes.t5 = sw.lap();
     }
+
+    this.gameMode.onTick(this);
+
+    this.updateTimes.t6 = sw.lap();
 
     // update leaderboard
     if (((this.tickCounter + 3) % 8) === 0) {
         this.updateLeaderboard();
-        this.updateTimes.t6 = sw.lap();
+        this.updateTimes.t7 = sw.lap();
     }
 
     this.updateClients();
-    this.updateTimes.t7 = sw.lap();
+    this.updateTimes.t8 = sw.lap();
 
     // update internet usage
     if ((this.tickCounter % 25) === 0) {
@@ -721,9 +728,10 @@ GameServer.prototype.mainLoop = function() {
         this.pingServerTracker(); // once per 30 seconds
 
     // update-update time
-    this.updateTimes.t8 = sw.lap();
+    this.updateTimes.t9 = sw.lap();
     this.updateTime = sw.elapsed();
     sw.stop();
+    this.tickCounter++;
 };
 
 // update remerge first
@@ -863,7 +871,7 @@ GameServer.prototype.checkRigidCollision = function(m) {
         return this.gameMode.haveTeams &&
             m.cell.owner.team == m.check.owner.team;
     }
-    var r = this.config.mobilePhysics ? 1 : 13;
+    var r = this.config.mobilePhysics ? 1 : 15;
     if (m.cell.getAge() < r || m.check.getAge() < r) {
         return false; // just splited => ignore
     }
@@ -908,7 +916,7 @@ GameServer.prototype.resolveCollision = function(m) {
 
     // collision owned => ignore, resolve, or remerge
     if (cell.owner && cell.owner == check.owner) {
-        if (cell.getAge() < 13 || check.getAge() < 13)
+        if (cell.getAge() < 15 || check.getAge() < 15)
             return; // just splited => ignore
     } else if (check._size < cell._size * 1.1401 || !check.canEat(cell))
         return; // Cannot eat or cell refuses to be eaten

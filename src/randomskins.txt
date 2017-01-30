@@ -336,8 +336,3 @@ dynamite_guy
 neon_bug
 blue_swirl
 jumper
-carp
-china_dragon
-dumpling
-chicken
-fire_rooster

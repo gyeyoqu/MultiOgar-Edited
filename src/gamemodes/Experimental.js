@@ -54,7 +54,6 @@ Experimental.prototype.onServerInit = function(gameServer) {
             bx = currBoost * this.boostDirection.x + newBoost * prey.boostDirection.x,
             by = currBoost * this.boostDirection.y + newBoost * prey.boostDirection.y;
         this.setBoost(Math.sqrt(bx * bx + by * by), Math.atan2(bx, by));
-
     };
     Entity.MotherCell.prototype.onAdd = function() {
         self.nodesMother.push(this);
