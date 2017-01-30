@@ -23,8 +23,7 @@ It updates server information in realtime with no need to refresh the page.
 
 If you want to include your server in the list. Just install the latest version of MultiOgar server and enable server tracking with `serverTracker = 1` in gameserver.ini
 
-If you have other server and want to include it in the list, just insert the code to ping ogar-tracker.tk into your server.
-You can found example in MultiOgar source code: https://github.com/Megabyte918/MultiOgar-Edited/blob/master/src/GameServer.js#L1350-L1373
+If you have another tracker where you want to publish your server at, see [this function](https://github.com/Megabyte918/MultiOgar-Edited/blob/master/src/GameServer.js#L1244) for adding the functionality.
 
 ## Screenshot
 
@@ -123,60 +122,11 @@ If you don't want to include your server to tracker list,
 just set `serverTracker = 0` and the server will not ping the server tracker.
 
 ###Ogar clients
-Just replace `127.0.0.1:443` in the url to the server IP and port to play.
-
 URL | Protocol | Description
 --- | --- | ---
-http://agar.io/?ip=127.0.0.1:443 | 8 | Vanilla
-http://ogar.mivabe.nl/?ip=127.0.0.1:443 | early 5 | MivaBe, pretty smooth, custom graphics (anime)
-http://old.ogarul.io/?ip=127.0.0.1:443 | 4 | OgarUL, old vanilla style
-http://c0nsume.me/private4.php?ip=127.0.0.1:443 | 5 | Vanilla style
-http://astr.io/?ip=127.0.0.1:443 | 9 | Extension like
+http://agar.io/?ip=127.0.0.1:443 | 11 | Vanilla with no chat
+http://ogar.mivabe.nl/?ip=127.0.0.1:443 | early 5 | MivaBe, pretty smooth, anime-like cells and overlay
+http://old.ogarul.io/?ip=127.0.0.1:443 | 4 | OgarUL, old vanilla style with chat
+http://c0nsume.me/private4.php?ip=127.0.0.1:443 | 5 | Vanilla style with chat
+http://astr.io/?ip=127.0.0.1:443 | 6 | Extension like with chat
 http://alis.io/?ip=127.0.0.1:443 | 5 | Extension like
-
-
-## What's new:
-* Added mobile physics
-* Added support for secure websocket connections (TLS)
-* Fixed mass decay
-* Added ejectSizeLoss
-* Added sub-net ban feature (use `ban xx.xx.xx.*` or `ban xx.xx.*.*` to ban entire sub-network)
-* Added performance optimizations, now up to 700 bots with no lags at all
-* Fixed bug when some cell split/eject were shown with delay for some clients
-* Added a lot of protocol optimizations, now server works with no lags at all even with 64 connected players
-* Added server version, now you can check if your MultiOgar code is fresh
-* Significant performance improvement and more smooth physics
-* Added protocol optimizations to reduce lags on cell multi split
-* Fixed pop-split behavior
-* Fixed cell-split order, now split-run works ok
-* A little performance improvement for split/eject
-* Fixed min mass to split/eject
-* Fixed mass-limit behavior
-* Added chat player commands /skin and /kill (to change skin, just type /skin %shark in the chat)
-* Added scramble level 3 (anti-bot/anti-minimap protection), unsupported on some clients (unfortunately include vanilla, ogar.mivabe.nl works ok)
-* Massive perfromance improvement & reduce network traffic
-* Split behavior - fixed;
-* Protocol code - optimized;
-* Massive performance improvement with quad-tree lookup;
-* Split/Eject - physics code rewritten;
-* Player speed - physics code rewritten;
-* Cell remerge - physics code rewritten;
-* Cell collision - physics code rewritten;
-* View area - code rewritten;
-* Spectate - code rewritten;
-* Mouse control and cell movements - physics code rewritten;
-* Border calculations - rewritten;
-* Border bouncy physics - fixed and improved;
-* mainLoop - cleaned;
-* Added support for different protocols (4, early 5, late 5, 6, 7, 8);
-* Added automatic mouse message type recognition;
-* Added chat support;
-* Added anti-spam protection;
-* Added skin support (use name "< shark > Fish", remove space);
-* Color generator replaced with hsv model;
-* Memory leaks - fixed;
-* Performance improved and optimized
-* Added support for server tracker ogar.mivabe.nl/master
-
-Most of the physics code from the original Ogar were rewritten.
-The physics engine in MultiOgar is pretty close to the old vanilla physics.
