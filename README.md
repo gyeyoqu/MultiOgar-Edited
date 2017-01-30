@@ -3,22 +3,22 @@ Ogar game server with fast and smooth vanilla physics and multi-protocol support
 
 Since Barbosik stopped working on the original MultiOgar, I decided to continue it on this fork =D
 
-Current version: **1.6.0**
+Current version: **1.6.1**
 
 ## Project Info
 ![Language](https://img.shields.io/badge/language-node.js-yellow.svg)
 [![License](https://img.shields.io/badge/license-APACHE2-blue.svg)](https://github.com/Barbosik/OgarMulti/blob/master/LICENSE.md)
 
-MultiOgar code based on Ogar code that I heavily modified, and will continue to update. 
+MultiOgar code based on Ogar code that I heavily modified, and will continue to update.
 Almost all physics and protocol code were rewritten and optimized.
-The [OgarProject](https://ogarproject.com) owns Ogar, and I do not claim it as mine! 
+The [OgarProject](https://ogarproject.com) owns Ogar, and I do not claim it as mine!
 Original Ogar found [here](https://github.com/OgarProject/Ogar)
 
 The goal is to make good and smooth physics and cleanup the code.
 
 ## Ogar Server Tracker
 
-You can found active Ogar servers on http://ogar-tracker.tk 
+You can found active Ogar servers on http://ogar-tracker.tk
 It updates server information in realtime with no need to refresh the page.
 
 If you want to include your server in the list. Just install the latest version of MultiOgar server and enable server tracking with `serverTracker = 1` in gameserver.ini
@@ -119,7 +119,7 @@ http://c0nsume.me/tracker.php | c0nsume.me server tracker
 Now you can allow MultiOgar to be listed on a server tracker.
 Just set `serverTracker = 1` in the gameserver.ini, and your server will appear
 on these pages: http://ogar.mivabe.nl/master , http://c0nsume.me/tracker.php
-If you don't want to include your server to tracker list, 
+If you don't want to include your server to tracker list,
 just set `serverTracker = 0` and the server will not ping the server tracker.
 
 ###Ogar clients
