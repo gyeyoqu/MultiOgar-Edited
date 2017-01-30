@@ -167,7 +167,7 @@ BotPlayer.prototype.decide = function(cell) {
     if (bestPrey != null) {
         // Nearby virus check
         var sizeEat = Math.sqrt(splitCellSize * splitCellSize + check._sizeSquared) + 40;
-        if (this.gameServer.quadTree.any({
+        if (this.gameServer.finder.any({
                 minx: bestPrey.position.x - sizeEat,
                 miny: bestPrey.position.y - sizeEat,
                 maxx: bestPrey.position.x + sizeEat,

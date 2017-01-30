@@ -21,12 +21,75 @@ function RushMode() {
     ];
 
     this._lb = [];
+    this.playerLeaderboard = [];
 }
 
 module.exports = RushMode;
 RushMode.prototype = new FFA();
 
 RushMode.prototype.onServerInit = function(gameServer) {
+    gameServer.config.serverMaxLB += 1;
+
+    // Apply edits for leaderboards
+    PlayerTracker.prototype.sendLeaderboard = function() {
+        // Update leaderboard if changed
+        if (this.gameServer.leaderboardChanged) {
+            var lbType = this.gameServer.leaderboardType,
+                lbList = this.gameServer.leaderboard;
+
+            if (lbType >= 0) {
+                if (this.socket.packetHandler.protocol >= 11) {
+                    var i = this.gameServer.gameMode.playerLeaderboard.indexOf(this);
+                    this.socket.sendPacket(new Packet.LeaderboardPosition(this, i + 1));
+                }
+                this.socket.sendPacket(new Packet.UpdateLeaderboard(this, lbList, lbType));
+            }
+        }
+    };
+    Packet.UpdateLeaderboard.prototype.buildFfa5 = function() {
+        var player = this.playerTracker,
+            lb = player.gameServer.gameMode.playerLeaderboard;
+
+        var writer = new BinaryWriter();
+        writer.writeUInt8(0x31);                               // Packet ID
+        writer.writeUInt32(this.leaderboardCount >>> 0);       // Number of elements
+        for (var i = 0; i < this.leaderboardCount; i++) {
+            var item = this.leaderboard[i];
+
+            var id = 0;
+            if (lb[i] === player && lb[i].cells[0])
+                id = lb[i].cells[0].nodeId ^ this.playerTracker.scrambleId;
+
+            writer.writeUInt32(id >>> 0);   // Player cell Id
+            writer.writeStringZeroUnicode(item);
+        }
+        return writer.toBuffer();
+    };
+    Packet.UpdateLeaderboard.prototype.buildFfa6 = function() {
+        var player = this.playerTracker,
+            lb = player.gameServer.gameMode.playerLeaderboard;
+
+        var writer = new BinaryWriter();
+        writer.writeUInt8(0x31);                               // Packet ID
+        writer.writeUInt32(this.leaderboardCount >>> 0);       // Number of elements
+        for (var i = 0; i < this.leaderboardCount; i++) {
+            var item = this.leaderboard[i];
+
+            writer.writeUInt32(lb[i] === player ? 1 : 0);   // Player cell Id
+            writer.writeStringZeroUtf8(item);
+        }
+        return writer.toBuffer();
+    };
+    Packet.UpdateLeaderboard.prototype.buildFfa11 = function() {
+        var player = this.playerTracker;
+
+        var writer = new BinaryWriter();
+        writer.writeUInt8(0x31);                               // Packet ID
+        writer.writeUInt32(this.leaderboardCount >>> 0);       // Number of elements
+        for (var i = 0; i < this.leaderboardCount; i++)
+            writer.writeStringZeroUtf8(this.leaderboard[i] || "");
+        return writer.toBuffer();
+    };
     this.onStageChange(gameServer);
 };
 
@@ -99,7 +162,7 @@ RushMode.prototype.resetWorld = function(gameServer) {
 }
 
 RushMode.prototype.updateLB = function(gameServer) {
-    gameServer.leaderboardType = 0x30;
+    gameServer.leaderboardType = 0x31;
 
     switch (this.stage) {
         case 0:
@@ -155,7 +218,8 @@ RushMode.prototype.updateLB1 = function(gameServer) {
         lbPlayers.splice(pushi, 0, client);
         rl++;
     }
-    lb = lb.slice(0, gameServer.config.serverMaxLB);
+    lb = lb.slice(0, gameServer.config.serverMaxLB - 1);
+    lbPlayers = lbPlayers.slice(0, gameServer.config.serverMaxLB - 1);
     lb.push("Time left: " + this.getRemainingTimeString(gameServer));
 
     this.rankOne = lbPlayers[0];
@@ -171,7 +235,7 @@ RushMode.prototype.updateLB2 = function(gameServer) {
         "Restarting in " + this.getRemainingTimeString(gameServer)
     ];
 
-    this.rankOne = this.winner;
+    this.playerLeaderboard = [ this.rankOne = this.winner ];
     gameServer.leaderboard = lb;
     gameServer.leaderboardChanged = this._lb[2] !== lb[2];
     this._lb = lb;

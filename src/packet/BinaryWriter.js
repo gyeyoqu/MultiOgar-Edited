@@ -14,7 +14,6 @@ global.sharedBuffer = oldNode ? new Buffer(allocMax) : Buffer.allocUnsafe(allocM
 global.allocLength = 0;
 
 function BinaryWriter() {
-    sharedBuffer.fill(0, 0, allocLength);
     allocLength = 0;
 }
 

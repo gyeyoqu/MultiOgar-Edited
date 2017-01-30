@@ -18,7 +18,7 @@ function GameServer() {
 
     // Startup
     this.run = true;
-    this.version = '1.6.0';
+    this.version = '1.6.1';
     this.httpServer = null;
     this.commands = null;
     this.lastNodeId = 1;
@@ -97,6 +97,7 @@ function GameServer() {
         /** BORDER **/
         borderWidth: 14142.135623730952,  // Map border size (Vanilla value: 14142)
         borderHeight: 14142.135623730952, // Map border size (Vanilla value: 14142)
+        useSpatialHash: 0,          // If 1, server will use a spatial hash for finding nodes. If 0, server will use quadtree instead.
 
         /** FOOD **/
         foodMinSize: 10,            // Minimum food size (vanilla 10)
@@ -163,9 +164,14 @@ function GameServer() {
     this.loadBadWords();
 
     // Set border, quad-tree
-    var QuadNode = require('./modules/QuadNode.js');
     this.setBorder(this.config.borderWidth, this.config.borderHeight);
-    this.quadTree = new QuadNode(this.border, 64, 32);
+
+    var QuadNode = require('./modules/QuadNode'),
+        SpatialHash = require('./modules/SpatialHash');
+    if (this.config.useSpatialHash)
+        this.finder = new SpatialHash(this.border, 64);
+    else
+        this.finder = new QuadNode(this.border, 64, 32);
 
     // Gamemodes
     var Gamemode = require('./gamemodes');
@@ -230,7 +236,7 @@ GameServer.prototype.addNode = function(node) {
         cell: node, // update viewbox for players
         bound: { minx: x-size, miny: y-size, maxx: x+size, maxy: y+size }
     };
-    this.quadTree.insert(node.quadItem);
+    this.finder.insert(node.quadItem);
     this.nodes.push(node);
 
     // Adds to the owning player's screen
@@ -416,7 +422,7 @@ GameServer.prototype.getRandomColor = function() {
 GameServer.prototype.removeNode = function(node) {
     // Remove from quad-tree
     node.isRemoved = true;
-    this.quadTree.remove(node.quadItem);
+    this.finder.remove(node.quadItem);
     node.quadItem = null;
 
     // Remove from main nodes list
@@ -593,7 +599,7 @@ GameServer.prototype.mainLoop = function() {
         for (i = 0; i < l; i++) {
             cell = this.movingNodes[i];
             if (!cell) continue;
-            this.quadTree.find(cell.quadItem.bound, function(check) {
+            this.finder.find(cell.quadItem.bound, function(check) {
                 if (cell.isRemoved || check.cell.isRemoved) return;
                 if (check.cell.cellType === 0 || check.cell.cellType === 1) return;
                 if (check.cell === cell) return;
@@ -628,7 +634,7 @@ GameServer.prototype.mainLoop = function() {
             client = cell.owner;
 
             // Eating
-            this.quadTree.find(cell.quadItem.bound, function(check) {
+            this.finder.find(cell.quadItem.bound, function(check) {
                 if (cell.isRemoved || check.isRemoved) return;
                 if (check.cell === cell) return;
                 var m = self.checkCellCollision(cell, check.cell);
@@ -672,7 +678,7 @@ GameServer.prototype.mainLoop = function() {
             this.movePlayer(cell, client);
             this.autoSplit(cell, client);
 
-			this.quadTree.find(cell.quadItem.bound, function(check) {
+			this.finder.find(cell.quadItem.bound, function(check) {
                 if (check.cell === cell) return;
                 var m = self.checkCellCollision(cell, check.cell);
                 if (self.checkRigidCollision(m)) {
@@ -843,7 +849,7 @@ GameServer.prototype.updateNodeQuad = function(node) {
     item.bound.miny = y - size;
     item.bound.maxx = x + size;
     item.bound.maxy = y + size;
-    this.quadTree.update(item);
+    this.finder.update(item);
 };
 
 // Checks cells for collision
@@ -1047,7 +1053,7 @@ GameServer.prototype.willCollide = function(pos, size) {
     if (sq + (size * size) <= size * 2) {
         return null; // not safe => try again
     }
-    return this.quadTree.any(
+    return this.finder.any(
         bound, function(item) {
             return item.cell.cellType != 3; // don't check ejected
         });
@@ -1359,6 +1365,7 @@ GameServer.prototype.pingServerTracker = function() {
     }
 
     // ogar-tracker.tk
+    /*
     var obj = {
         port: this.config.serverPort,               // [mandatory] web socket port which listens for game client connections
         name: this.config.serverName,               // [mandatory] server name
@@ -1383,7 +1390,7 @@ GameServer.prototype.pingServerTracker = function() {
         path: '/api/ping',
         method: 'PUT'
     }, 'application/json', JSON.stringify(obj));
-
+    */
 
     // mivabe.nl
     var data = 'current_players=' + totalPlayers +
@@ -1421,13 +1428,14 @@ function trackerRequest(options, type, body) {
     options.headers['content-length'] = body == null ? 0 : Buffer.byteLength(body, 'utf8');
     var req = http.request(options, function(res) {
         if (res.statusCode != 200) {
-            Logger.writeError("[Tracker][" + options.host + "]: statusCode = " + res.statusCode);
+            Logger.writeError("Tracker request for " + options.host + " returned status code " + res.statusCode);
             return;
         }
+        Logger.write("Tracker request for " + options.host + " successful");
         res.setEncoding('utf8');
     });
     req.on('error', function(err) {
-        Logger.writeError("[Tracker][" + options.host + "]: " + err);
+        Logger.writeError("Tracker request for " + options.host + " returned an error: " + err);
     });
     req.shouldKeepAlive = false;
     req.on('close', function() {

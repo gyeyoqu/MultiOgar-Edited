@@ -277,7 +277,7 @@ PlayerTracker.prototype.updateTick = function() {
     // update visible nodes
     this.viewNodes = [];
     var self = this;
-    this.gameServer.quadTree.find(this.viewBox, function(quadItem) {
+    this.gameServer.finder.find(this.viewBox, function(quadItem) {
         if (quadItem.cell.owner != self)
             self.viewNodes.push(quadItem.cell);
     });
@@ -389,8 +389,8 @@ PlayerTracker.prototype.sendLeaderboard = function() {
             lbList = this.gameServer.leaderboard;
 
         if (lbType >= 0) {
-            if (this.socket.packetHandler.protocol >= 11)
-                this.socket.sendPacket(new Packet.LeaderboardPosition(lbList.indexOf(this) + 1));
+            if (this.socket.packetHandler.protocol >= 11 && this.gameServer.gameMode.specByLeaderboard)
+                this.socket.sendPacket(new Packet.LeaderboardPosition(this, lbList.indexOf(this) + 1));
             this.socket.sendPacket(new Packet.UpdateLeaderboard(this, lbList, lbType));
         }
     }

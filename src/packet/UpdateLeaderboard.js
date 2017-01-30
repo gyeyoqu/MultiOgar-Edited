@@ -7,9 +7,6 @@ function UpdateLeaderboard(playerTracker, leaderboard, leaderboardType) {
     this.leaderboard = leaderboard;
     this.leaderboardType = leaderboardType;
     this.leaderboardCount = Math.min(leaderboard.length, playerTracker.gameServer.config.serverMaxLB);
-
-    if (this.leaderboardType === 0x30 && playerTracker.socket.packetHandler.protocol >= 11)
-        this.leaderboardType = 0x31;
 }
 
 module.exports = UpdateLeaderboard;
@@ -18,7 +15,10 @@ UpdateLeaderboard.prototype.build = function(protocol) {
     switch (this.leaderboardType) {
         case 0x30:
             // UserText
-            return this.buildUserText(protocol);
+            if (protocol < 11)
+                return this.buildUserText6(protocol);
+            else
+                return this.buildUserText11();
         case 0x31:
             // FFA
             if (protocol < 6)
@@ -35,13 +35,12 @@ UpdateLeaderboard.prototype.build = function(protocol) {
 }
 
 // UserText
-UpdateLeaderboard.prototype.buildUserText = function(protocol) {
+UpdateLeaderboard.prototype.buildUserText6 = function(protocol) {
     var writer = new BinaryWriter();
     writer.writeUInt8(protocol < 6 ? 0x31 : 0x30);
     writer.writeUInt32(this.leaderboard.length >>> 0);
     for (var i = 0; i < this.leaderboard.length; i++) {
-        var item = this.leaderboard[i];
-        item = item || "";
+        var item = this.leaderboard[i] || "";
 
         if (protocol < 6)
             writer.writeUInt32(0);
@@ -54,11 +53,22 @@ UpdateLeaderboard.prototype.buildUserText = function(protocol) {
     return writer.toBuffer();
 };
 
+UpdateLeaderboard.prototype.buildUserText11 = function() {
+    var writer = new BinaryWriter();
+    writer.writeUInt8(0x31);
+    writer.writeUInt32(this.leaderboard.length >>> 0);
+    for (var i = 0; i < this.leaderboard.length; i++) {
+        var item = this.leaderboard[i] || "";
+
+        writer.writeStringZeroUtf8(item);
+    }
+    return writer.toBuffer();
+};
+
+
 // FFA protocol 5
 UpdateLeaderboard.prototype.buildFfa5 = function() {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null)
-        player = player.spectateTarget;
 
     var writer = new BinaryWriter();
     writer.writeUInt8(0x31);                               // Packet ID
@@ -85,8 +95,6 @@ UpdateLeaderboard.prototype.buildFfa5 = function() {
 // FFA protocol 6
 UpdateLeaderboard.prototype.buildFfa6 = function() {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null)
-        player = player.spectateTarget;
 
     var writer = new BinaryWriter();
     writer.writeUInt8(0x31);                               // Packet ID
@@ -110,8 +118,6 @@ UpdateLeaderboard.prototype.buildFfa6 = function() {
 // FFA protocol 11
 UpdateLeaderboard.prototype.buildFfa11 = function() {
     var player = this.playerTracker;
-    if (player.spectate && player.spectateTarget != null)
-        player = player.spectateTarget;
 
     var writer = new BinaryWriter();
     writer.writeUInt8(0x31);                                 // Packet ID
