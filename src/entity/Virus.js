@@ -27,7 +27,7 @@ Virus.prototype.onEat = function (prey) {
     
     if (this._size >= this.gameServer.config.virusMaxSize) {
         this.setSize(this.gameServer.config.virusMinSize); // Reset mass
-        this.gameServer.shootVirus(this, angle);
+        this.gameServer.shootVirus(this.position, angle);
     }
 };
 
